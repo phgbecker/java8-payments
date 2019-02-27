@@ -9,20 +9,18 @@ public class Subscription {
     private Customer customer;
     private BigDecimal monthlyFee;
     private LocalDateTime beginDate;
-    private Optional<LocalDateTime> endDate;
+    private LocalDateTime endDate;
 
     public Subscription(Customer customer, BigDecimal monthlyFee, LocalDateTime beginDate) {
         this.customer = customer;
         this.monthlyFee = monthlyFee;
         this.beginDate = beginDate;
-        this.endDate = Optional.empty();
     }
 
     public Subscription(Customer customer, BigDecimal monthlyFee, LocalDateTime beginDate, LocalDateTime endDate) {
         this.customer = customer;
         this.monthlyFee = monthlyFee;
         this.beginDate = beginDate;
-        this.endDate = Optional.of(endDate);
     }
 
     public Customer getCustomer() {
@@ -50,20 +48,27 @@ public class Subscription {
     }
 
     public Optional<LocalDateTime> getEndDate() {
-        return endDate;
+        return Optional.ofNullable(endDate);
     }
 
-    public void setEndDate(Optional<LocalDateTime> endDate) {
+    public void setEndDate(LocalDateTime endDate) {
         this.endDate = endDate;
     }
 
-    public BigDecimal getTotalPaid() {
+    public BigDecimal getTotalPaid(ChronoUnit chronoUnit) {
         return monthlyFee.multiply(
-                new BigDecimal(ChronoUnit.MONTHS.between(
+                new BigDecimal(Optional.ofNullable(chronoUnit).orElse(ChronoUnit.MONTHS).between(
                         beginDate,
-                        endDate.orElse(LocalDateTime.now()
+                        getEndDate().orElse(LocalDateTime.now()
                         )
                 ))
+        );
+    }
+
+    public long getTimeElapsed(ChronoUnit chronoUnit) {
+        return chronoUnit.between(
+                beginDate,
+                getEndDate().orElse(LocalDateTime.now())
         );
     }
 

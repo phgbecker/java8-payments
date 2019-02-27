@@ -1,4 +1,5 @@
 import entity.*;
+import util.TotalPaidSubscription;
 
 import java.math.BigDecimal;
 import java.nio.file.Paths;
@@ -6,6 +7,7 @@ import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -13,21 +15,21 @@ import java.util.stream.Stream;
 public class Implementation {
 
     public static void main(String[] args) {
-        /**
-         * Customers
-         */
+        /*
+        Customers
+        */
         Customer peter = new Customer("Peter");
         Customer john = new Customer("John");
         Customer mary = new Customer("Mary");
 
 
-        /**
-         *  Products
+        /*
+        Products
          */
         Product killBill = new Product(
                 "Kill Bill Vol. 1",
                 MediaFormat.MOVIE,
-                Paths.get("/home/media/killBill_vol1.mkv"),
+                Paths.get("/home/media/killBill_Vol-1.mkv"),
                 new BigDecimal(50)
         );
 
@@ -53,8 +55,8 @@ public class Implementation {
         );
 
 
-        /**
-         * Payments
+        /*
+         Payments
          */
         Payment peterPayment = new Payment(
                 Arrays.asList(killBill, pulpFiction),
@@ -83,9 +85,9 @@ public class Implementation {
         List<Payment> payments = Arrays.asList(peterPayment, johnPayment, maryFirstPayment, marySecondPayment);
 
 
-        /**
-         * From now on,
-         * we'll just stream the payments and gather useful data around it
+        /*
+         From now on,
+         we'll just stream the payments and gather useful data around it
          */
 
         payments.stream()
@@ -181,11 +183,11 @@ public class Implementation {
                                 Payment::getTotalAmount,
                                 BigDecimal::add)
                 ))
-                .forEach((customer, total) -> System.out.format("Customer \"%s\" has bought %f in total\n", customer.toString().toUpperCase(), total));
+                .forEach((customer, total) -> System.out.format("Customer \"%s\" has bought %f in total\n", customer, total));
 
 
-        /**
-         * Subscriptions
+        /*
+         Subscriptions
          */
 
         Subscription peterSubscription = new Subscription(
@@ -204,14 +206,37 @@ public class Implementation {
         Subscription marySubscription = new Subscription(
                 mary,
                 new BigDecimal(100.00),
-                LocalDateTime.now().minusMonths(5),
-                LocalDateTime.now().minusMonths(2)
+                LocalDateTime.now().minusMonths(1),
+                LocalDateTime.now()
         );
 
         List<Subscription> subscriptions = Arrays.asList(peterSubscription, johnrSubscription, marySubscription);
 
-        // Stats about the subscriptions
-        subscriptions.stream()
-                .forEach(s -> System.out.format("Customer \"%s\" has paid on subscription %f\n", s.getCustomer().getName().toUpperCase(), s.getTotalPaid()));
+
+        /*
+         Stats about the subscriptions
+         */
+
+        // Anonymous implementation of the Consumer<Subscription> functional interface
+        Consumer<Subscription> totalPaidSubscription = (s) ->
+            System.out.format("Customer \"%s\" paid %s in subscription over the last %s\n",
+                    s.getCustomer(),
+                    NumberFormat.getCurrencyInstance().format(s.getTotalPaid(ChronoUnit.MONTHS)),
+                    s.getTimeElapsed(ChronoUnit.MONTHS) + " " + ChronoUnit.MONTHS.toString().toLowerCase()
+            );
+        subscriptions.forEach(totalPaidSubscription);
+
+
+        /*
+         Implementation of the concrete class TotalPaidSubscription<Subscription, ChronoUnit>
+         that implements the Consumer<Subscription> functional interface
+         */
+        subscriptions.forEach(new TotalPaidSubscription(null));
+
+        subscriptions.forEach(new TotalPaidSubscription(ChronoUnit.MONTHS));
+
+        subscriptions.forEach(new TotalPaidSubscription(ChronoUnit.DAYS));
+
+        subscriptions.forEach(new TotalPaidSubscription(ChronoUnit.HOURS));
     }
 }
